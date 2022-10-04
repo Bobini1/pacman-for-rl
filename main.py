@@ -1,9 +1,12 @@
-import pygame
+from pacman.Ghost import Ghosts
+from pacman.Pacman import RandomPacman
+from pacman.Game import Game
 
 board = ["*   g",
-         " www ",
+         "gwww ",
          " w*  ",
          " www ",
-         "p    "]
+         "p   p"]
 
-game = Game(board, [Player(), Player()], [Ghost(), Ghost()], True)
+game = Game(board, [Ghosts.RED, Ghosts.PINK], [RandomPacman(), RandomPacman()], True)
+game.run()

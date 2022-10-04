@@ -1,13 +1,12 @@
 import operator
 
 import pygame
-from typing import List, Tuple, Set
-from fractions import Fraction
-from actors.Position import Position
-from actors.Actor import Actor
-from actors.Direction import Direction
-from actors.GameState import GameState
+from typing import List
+from .Position import Position
+from .Direction import Direction
+from .GameState import GameState
 from copy import deepcopy
+from .Helpers import can_move_in_direction, direction_to_new_position
 
 BIG_POINT_VALUE = 5
 POINT_VALUE = 1
@@ -15,34 +14,9 @@ ENEMY_VALUE = 20
 TIMER = 10
 
 
-def can_move_in_direction(position: Position, direction: Direction, walls: Set[Position]) -> bool:
-    if direction == Direction.UP:
-        return Position(position.x, position.y - 1) not in walls
-    elif direction == Direction.DOWN:
-        return Position(position.x, position.y + 1) not in walls
-    elif direction == Direction.LEFT:
-        return Position(position.x - 1, position.y) not in walls
-    elif direction == Direction.RIGHT:
-        return Position(position.x + 1, position.y) not in walls
-    else:
-        raise Exception("Unknown direction")
-
-
-def direction_to_new_position(position: Position, direction: Direction) -> Position:
-    if direction == Direction.UP:
-        return Position(position.x, position.y - 1)
-    elif direction == Direction.DOWN:
-        return Position(position.x, position.y + 1)
-    elif direction == Direction.LEFT:
-        return Position(position.x - 1, position.y)
-    elif direction == Direction.RIGHT:
-        return Position(position.x + 1, position.y)
-    else:
-        raise Exception("Unknown direction")
-
 
 class Game:
-    def __init__(self, board: str, ghosts, players, display_mode_on=False):
+    def __init__(self, board: List[str], ghosts, players, display_mode_on=False):
         self.board = board
         self.display_mode_on = display_mode_on
 
@@ -91,8 +65,8 @@ class Game:
         if self.display_mode_on:
             pygame.init()
             self.screen = pygame.display.set_mode((600, 600))
-            self.player_image = pygame.image.load('actors/images/pacman.png')
-            self.ghost_image = pygame.image.load('actors/images/ghost.png')
+            self.player_image = pygame.image.load('./assets/pacman.png')
+            self.ghost_image = pygame.image.load('./assets/red_ghost.png')
 
     def __draw_board(self):
         self.screen.fill((0, 0, 0))
@@ -178,19 +152,19 @@ class Game:
                 walls = deepcopy(self.walls)
                 board_size = deepcopy(self.board_size)
                 game_state = GameState(you, other_players, ghosts, points, big_points, walls, board_size)
-                move = player.get_move(game_state)
+                move = player.make_move(game_state)
                 while True:
                     if can_move_in_direction(self.positions[player], move, self.walls):
                         moves[player] = move
                         break
                     else:
-                        move = player.get_move(game_state, invalid_move=True)
+                        move = player.make_move(game_state, invalid_move=True)
 
             ghost_moves = {}
             for ghost in self.ghosts:
                 itemgetter = operator.itemgetter(*self.players)
                 ghost_moves[ghost] = ghost.make_move(self.positions[ghost], self.directions[ghost], self.walls,
-                                                     itemgetter(self.positions),
+                                                     itemgetter(self.positions), self.board_size,
                                                      True if ghost in self.eatable_timers else False)
             # convert moves to positions
             for player in self.players:

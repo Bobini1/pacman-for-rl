@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List, Dict, Any, Set, Tuple
-from Position import Position
+from .Position import Position
 
 
 @dataclass
