@@ -141,8 +141,10 @@ def find_path(start: Position, end: Position, walls: Set[Position], board_size: 
             new_position = direction_to_new_position(current, direction)
 
             # if the new position is not a wall and is not visited
-            if new_position not in walls and not visited[new_position.x][new_position.y] and new_position == clamp(
-                    new_position, Position(0, 0), Position(board_size[0] - 1, board_size[1] - 1)):
+            if new_position == clamp(
+                    new_position, Position(0, 0),
+                    Position(board_size[0] - 1, board_size[1] - 1)) and new_position not in walls and not \
+                    visited[new_position.x][new_position.y]:
                 # add the new position to the queue
                 queue.append(new_position)
 
