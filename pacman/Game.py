@@ -154,7 +154,7 @@ class Game:
                 game_state = GameState(you, other_players, ghosts, points, big_points, walls, board_size)
                 move = player.make_move(game_state)
                 while True:
-                    if can_move_in_direction(self.positions[player], move, self.walls):
+                    if can_move_in_direction(self.positions[player], move, self.walls, self.board_size):
                         moves[player] = move
                         break
                     else:

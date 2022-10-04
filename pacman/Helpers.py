@@ -3,18 +3,19 @@ from .Direction import Direction
 from typing import List, Dict, Any, Set, Tuple
 
 
-def can_move_in_direction(position: Position, direction: Direction, walls: Set[Position]) -> bool:
+def can_move_in_direction(position: Position, direction: Direction, walls: Set[Position],
+                          board_size: Tuple[int, int]) -> bool:
+    pos = None
     if direction == Direction.UP:
-        return Position(position.x, position.y - 1) not in walls
+        pos = Position(position.x, position.y - 1)
     elif direction == Direction.DOWN:
-        return Position(position.x, position.y + 1) not in walls
+        pos = Position(position.x, position.y + 1)
     elif direction == Direction.LEFT:
-        return Position(position.x - 1, position.y) not in walls
+        pos = Position(position.x - 1, position.y)
     elif direction == Direction.RIGHT:
-        return Position(position.x + 1, position.y) not in walls
-    else:
-        print(direction)
-        raise Exception("Unknown direction")
+        pos = Position(position.x + 1, position.y)
+
+    return pos not in walls and pos == clamp(pos, Position(0, 0), Position(board_size[0] - 1, board_size[1] - 1))
 
 
 def direction_to_new_position(position: Position, direction: Direction) -> Position:
@@ -29,6 +30,18 @@ def direction_to_new_position(position: Position, direction: Direction) -> Posit
     else:
         print(direction)
         raise Exception("Unknown direction")
+
+
+def positions_to_direction(start: Position, end: Position) -> Direction:
+    if start.x == end.x:
+        if start.y > end.y:
+            return Direction.UP
+        else:
+            return Direction.DOWN
+    elif start.x > end.x:
+        return Direction.LEFT
+    else:
+        return Direction.RIGHT
 
 
 # get closest position to start that is not a wall

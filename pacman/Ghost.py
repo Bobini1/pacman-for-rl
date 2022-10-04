@@ -1,4 +1,4 @@
-from .Helpers import can_move_in_direction, direction_to_new_position, find_path
+from .Helpers import can_move_in_direction, direction_to_new_position, find_path, positions_to_direction
 from .Direction import Direction
 from .Position import Position, clamp
 from random import choice
@@ -39,7 +39,7 @@ def strategy_normal_factory(relative_to_pacman: Position):
                     closest_distance = distance
                     closest_pacman = pacman
             clamped_goal = clamp(closest_pacman + relative_to_pacman, Position(0, 0), Position(board_size[0] - 1, board_size[1] - 1))
-            return find_path(my_position, clamped_goal, walls, board_size)[0]
+            return positions_to_direction(my_position, find_path(my_position, clamped_goal, walls, board_size)[0])
 
     return strategy
 
