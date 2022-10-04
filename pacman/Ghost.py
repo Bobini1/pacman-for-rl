@@ -26,8 +26,7 @@ def get_distance(pacman, my_position):
 def strategy_normal_factory(relative_to_pacman: Position):
     # this strategy will look for the closest Pacman and target them
     def strategy(my_position, my_direction, walls, pacman_positions, board_size, changed):
-        position_proposition = direction_to_new_position(my_position, my_direction)
-        if position_proposition not in walls:
+        if can_move_in_direction(my_position, my_direction, walls, board_size):
             return my_direction
         else:
             # find closest pacman
@@ -39,7 +38,8 @@ def strategy_normal_factory(relative_to_pacman: Position):
                     closest_distance = distance
                     closest_pacman = pacman
             clamped_goal = clamp(closest_pacman + relative_to_pacman, Position(0, 0), Position(board_size[0] - 1, board_size[1] - 1))
-            return positions_to_direction(my_position, find_path(my_position, clamped_goal, walls, board_size)[0])
+            path = find_path(my_position, clamped_goal, walls, board_size)
+            return positions_to_direction(my_position, path[0] if path else my_position)
 
     return strategy
 

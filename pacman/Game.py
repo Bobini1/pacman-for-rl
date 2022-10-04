@@ -14,6 +14,17 @@ ENEMY_VALUE = 20
 TIMER = 10
 
 
+def my_itemgetter(*items):
+    if len(items) == 1:
+        item = items[0]
+
+        def g(obj):
+            return obj[item],
+    else:
+        def g(obj):
+            return tuple(obj[item] for item in items)
+    return g
+
 
 class Game:
     def __init__(self, board: List[str], ghosts, players, display_mode_on=False):
@@ -65,8 +76,8 @@ class Game:
         if self.display_mode_on:
             pygame.init()
             self.screen = pygame.display.set_mode((600, 600))
-            self.player_image = pygame.image.load('./assets/pacman.png')
-            self.ghost_image = pygame.image.load('./assets/red_ghost.png')
+            self.player_image = pygame.transform.scale(pygame.image.load('./assets/pacman.png'), (30, 30))
+            self.ghost_image = pygame.transform.scale(pygame.image.load('./assets/red_ghost.png'), (30, 30))
 
     def __draw_board(self):
         self.screen.fill((0, 0, 0))
@@ -162,7 +173,7 @@ class Game:
 
             ghost_moves = {}
             for ghost in self.ghosts:
-                itemgetter = operator.itemgetter(*self.players)
+                itemgetter = my_itemgetter(*self.players)
                 ghost_moves[ghost] = ghost.make_move(self.positions[ghost], self.directions[ghost], self.walls,
                                                      itemgetter(self.positions), self.board_size,
                                                      True if ghost in self.eatable_timers else False)
@@ -188,7 +199,7 @@ class Game:
                             self.directions[ghost] = Direction.RIGHT
                             player.give_points(ENEMY_VALUE)
                         else:
-                            self.eatable_timers.pop(player)
+                            self.eatable_timers.pop(player, None)
                             self.players.remove(player)
                             self.positions.pop(player)
                             self.directions.pop(player)
@@ -196,7 +207,7 @@ class Game:
                 # eating players
                 for other_player in self.players:
                     if player is not other_player:
-                        if self.positions[player] == self.positions[other_player]:
+                        if self.positions.get(player) == self.positions.get(other_player):
                             if other_player in self.eatable_timers:
                                 self.eatable_timers.pop(other_player)
                                 self.players.remove(other_player)
