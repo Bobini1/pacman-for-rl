@@ -5,16 +5,15 @@ from random import choice
 from enum import Enum
 
 
-def default_strategy_eatable(y_position, my_direction, walls, pacman_positions, board_size, changed):
+def default_strategy_eatable(my_position, my_direction, walls, pacman_positions, board_size, changed):
     if changed:
         return ~my_direction
-    position_proposition = direction_to_new_position(y_position, my_direction)
-    if position_proposition not in walls:
+    if can_move_in_direction(my_position, my_direction, walls, board_size):
         return my_direction
     else:
         possible_directions = []
         for direction in Direction:
-            if can_move_in_direction(y_position, direction, walls):
+            if can_move_in_direction(my_position, direction, walls, board_size):
                 possible_directions.append(direction)
         return choice(possible_directions)
 
@@ -33,6 +32,7 @@ def strategy_normal_factory(relative_to_pacman: Position):
             closest_pacman = None
             closest_distance = None
             for pacman in pacman_positions:
+                distance = get_distance(pacman, my_position)
                 distance = get_distance(pacman, my_position)
                 if closest_distance is None or distance < closest_distance:
                     closest_distance = distance
