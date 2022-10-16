@@ -1,8 +1,7 @@
-from .Helpers import can_move_in_direction, direction_to_new_position, find_path, positions_to_direction
+from .Helpers import can_move_in_direction, find_path, positions_to_direction
 from .Direction import Direction
 from .Position import Position, clamp
 from random import choice
-from enum import Enum
 
 
 def default_strategy_eatable(my_position, my_direction, walls, pacman_positions, board_size, changed):

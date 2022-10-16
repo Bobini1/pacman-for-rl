@@ -1,6 +1,6 @@
 from .Position import Position, clamp
 from .Direction import Direction
-from typing import List, Dict, Any, Set, Tuple
+from typing import List, Set, Tuple
 
 
 def can_move_in_direction(position: Position, direction: Direction, walls: Set[Position],

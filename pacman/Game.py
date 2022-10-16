@@ -1,6 +1,3 @@
-import operator
-from collections import defaultdict
-
 import pygame
 from typing import List
 
