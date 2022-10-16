@@ -19,10 +19,10 @@ class Pacman(ABC):
 
 class RandomPacman(Pacman):
     def give_points(self, points):
-        pass
+        print(f"random pacman got {points} points")
 
     def on_death(self):
-        pass
+        print("random pacman dead")
 
     def make_move(self, game_state, invalid_move=False) -> Direction:
         return random.choice(list(Direction))  # it will make some valid move at some point

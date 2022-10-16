@@ -1,4 +1,5 @@
 import operator
+from collections import defaultdict
 
 import pygame
 from typing import List
@@ -14,7 +15,7 @@ from .Helpers import can_move_in_direction, direction_to_new_position
 BIG_POINT_VALUE = 5
 POINT_VALUE = 1
 ENEMY_VALUE = 20
-TIMER = 10
+TIMER = 15
 
 
 def my_itemgetter(*items):
@@ -83,6 +84,8 @@ class Game:
             self.screen = pygame.display.set_mode((600, 600))
             self.player_image = pygame.transform.scale(pygame.image.load('./assets/pacman.png'), (30, 30))
             self.ghost_image = pygame.transform.scale(pygame.image.load('./assets/red_ghost.png'), (30, 30))
+            self.player_image_blue = pygame.transform.scale(pygame.image.load('./assets/blue_pacman.png'), (30, 30))
+            self.ghost_image_blue = pygame.transform.scale(pygame.image.load('./assets/blue_ghost.png'), (30, 30))
 
     def __draw_board(self):
         self.screen.fill((0, 0, 0))
@@ -93,19 +96,19 @@ class Game:
                     color = (0, 255, 255)
                     pygame.draw.rect(self.screen, color, pygame.Rect(60 * x, 60 * y, 60, 60))
 
-        color = (255, 255, 0)
         for player in self.players:
+            color = (0, 0, 255) if player in self.eatable_timers else (255, 255, 0)
             position = self.positions[player]
             pygame.draw.rect(self.screen, color, pygame.Rect(60 * position.x, 60 * position.y, 60, 60))
             pygame.draw.rect(self.screen, color, pygame.Rect(position.x * self.cell_size + 15,
                                                              position.y * self.cell_size + 15, 30, 30))
-            self.screen.blit(self.player_image,
+            self.screen.blit(self.player_image_blue if player in self.eatable_timers else self.player_image,
                              (position.x * self.cell_size + 15, position.y * self.cell_size + 15))
 
         for ghost in self.ghosts:
             position = self.positions[ghost]
             # pygame.draw.rect(self.screen, color, pygame.Rect(ghost['x'] * self.cell_size + 15, ghost['y'] * self.cell_size + 15, 30, 30))
-            self.screen.blit(self.ghost_image,
+            self.screen.blit(self.ghost_image_blue if ghost in self.eatable_timers else self.ghost_image,
                              (position.x * self.cell_size + 15, position.y * self.cell_size + 15))
 
         color = (255, 255, 255)
@@ -114,10 +117,10 @@ class Game:
             pygame.draw.ellipse(self.screen, color,
                                 pygame.Rect(point.x * self.cell_size + 25, point.y * self.cell_size + 25, 10,
                                             10))
-        for point in self.points:
+        for point in self.big_points:
             pygame.draw.ellipse(self.screen, color,
-                                pygame.Rect(point.x * self.cell_size + 25, point.y * self.cell_size + 25, 10,
-                                            10))
+                                pygame.Rect(point.x * self.cell_size + 20, point.y * self.cell_size + 20, 20,
+                                            20))
 
         pygame.display.flip()
 
@@ -214,6 +217,8 @@ class Game:
                 old_positions[ghost] = self.positions[ghost]
                 self.positions[ghost] = direction_to_new_position(self.positions[ghost], self.directions[ghost])
 
+            points_to_give = {player: 0 for player in self.players}
+
             # handle eating enemies
             # the time complexity could be improved but I don't care
             for player in self.players:
@@ -229,7 +234,7 @@ class Game:
                             self.eatable_timers.pop(ghost)
                             self.positions[ghost] = self.starting_positions[ghost]
                             self.directions[ghost] = Direction.RIGHT
-                            player.give_points(ENEMY_VALUE)
+                            points_to_give[player] += ENEMY_VALUE
                         else:
                             players_to_remove.append(player)
                 # eating players
@@ -267,12 +272,11 @@ class Game:
                         self.directions.pop(player, None)
                         player.on_death()
 
-
             # eating points
             for player in self.players:
                 if self.positions[player] in self.points:
                     self.points.remove(self.positions[player])
-                    player.give_points(POINT_VALUE)
+                    points_to_give[player] += POINT_VALUE
                 if self.positions[player] in self.big_points:
                     self.big_points.remove(self.positions[player])
                     # set timer on other players and ghosts
@@ -281,4 +285,8 @@ class Game:
                             self.eatable_timers[other_player] = TIMER
                     for ghost in self.ghosts:
                         self.eatable_timers[ghost] = TIMER
-                    player.give_points(BIG_POINT_VALUE)
+                    points_to_give[player] += BIG_POINT_VALUE
+
+            for player, points in points_to_give.items():
+                if player in self.players:  # if player is not dead
+                    player.give_points(points)

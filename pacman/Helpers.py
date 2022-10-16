@@ -28,11 +28,10 @@ def direction_to_new_position(position: Position, direction: Direction) -> Posit
     elif direction == Direction.RIGHT:
         return Position(position.x + 1, position.y)
     else:
-        print(direction)
-        raise Exception("Unknown direction")
+        return position
 
 
-def positions_to_direction(start: Position, end: Position) -> Direction:
+def positions_to_direction(start: Position, end: Position) -> Direction | None:
     if start.x == end.x:
         if start.y > end.y:
             return Direction.UP
@@ -110,8 +109,6 @@ def find_path(start: Position, end: Position, walls: Set[Position], board_size: 
 
     # get the closest position to end that is not a wall
     end = get_closest_position(end, walls, board_size)
-
-    start = get_closest_position(start, walls, board_size)
 
     # add the start position to the queue
     queue.append(start)

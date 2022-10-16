@@ -6,7 +6,7 @@ board = ["*   g",
          "gwww ",
          " w*  ",
          " www ",
-         "  + p"]
+         "p + p"]
 
-game = Game(board, [Ghosts.RED, Ghosts.PINK], [RandomPacman()], True)
+game = Game(board, [Ghosts.RED, Ghosts.PINK], [RandomPacman(), RandomPacman()], True)
 game.run()
