@@ -86,7 +86,6 @@ class Game:
             self.screen = pygame.display.set_mode((600, 600))
             self.player_image = pygame.transform.scale(pygame.image.load('./assets/pacman.png'), (30, 30))
             self.ghost_image = pygame.transform.scale(pygame.image.load('./assets/red_ghost.png'), (30, 30))
-            self.player_image_blue = pygame.transform.scale(pygame.image.load('./assets/blue_pacman.png'), (30, 30))
             self.ghost_image_blue = pygame.transform.scale(pygame.image.load('./assets/blue_ghost.png'), (30, 30))
 
     def __draw_board(self):
