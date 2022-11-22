@@ -21,9 +21,9 @@ board_big = ["wwwwwwwwwwwwwwwwwwwwwwwwwwww",
              "     w*wwwww ww wwwww*w     ",
              "     w*ww          ww*w     ",
              "     w*ww www  www ww*w     ",
-             "wwwwww*ww wg    gw ww*wwwwww",
-             "      *   w      w   *      ",
-             "wwwwww*ww wg    gw ww*wwwwww",
+             "wwwwww*ww wwwggwww ww*wwwwww",
+             "      *   www  www   *      ",
+             "wwwwww*ww wwwggwww ww*wwwwww",
              "     w*ww wwwwwwww ww*w     ",
              "     w*ww          ww*w     ",
              "     w*ww wwwwwwww ww*w     ",
@@ -40,6 +40,7 @@ board_big = ["wwwwwwwwwwwwwwwwwwwwwwwwwwww",
              "wp************************pw",
              "wwwwwwwwwwwwwwwwwwwwwwwwwwww"]
 
-game = Game(board_big, [Ghosts.RED, Ghosts.PINK, Ghosts.BLUE, Ghosts.ORANGE],
-            [RandomPacman(), RandomPacman(), RandomPacman(), RandomPacman()], True)
-game.run()
+while True:
+    game = Game(board_big, [Ghosts.RED, Ghosts.PINK, Ghosts.BLUE, Ghosts.ORANGE],
+                [RandomPacman(), RandomPacman(), RandomPacman(), RandomPacman()], True, delay=False)
+    game.run()

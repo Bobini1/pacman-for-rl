@@ -44,6 +44,7 @@ def positions_to_direction(start: Position, end: Position) -> Direction | None:
 
 
 # get closest position to start that is not a wall
+# get closest position to start that is not a wall
 def get_closest_position(start: Position, walls: Set[Position], board_size: Tuple[int, int]) -> Position:
     start = clamp(start, Position(0, 0), Position(board_size[0] - 1, board_size[1] - 1))
 
@@ -81,8 +82,8 @@ def get_closest_position(start: Position, walls: Set[Position], board_size: Tupl
 
             # if the new position is not visited
             if new_position == clamp(
-                    new_position, Position(0, 0),
-                    Position(board_size[0] - 1, board_size[1] - 1)) and not visited[new_position.x][new_position.y]:
+                    new_position, Position(0, 0), Position(board_size[0] - 1, board_size[1] - 1)) and not \
+            visited[new_position.x][new_position.y]:
                 # add the new position to the queue
                 queue.append(new_position)
 

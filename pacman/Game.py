@@ -28,9 +28,10 @@ def my_itemgetter(*items):
 
 
 class Game:
-    def __init__(self, board: List[str], ghosts: List[Ghost], players: List[Pacman], display_mode_on=False):
+    def __init__(self, board: List[str], ghosts: List[Ghost], players: List[Pacman], display_mode_on=False, delay=100):
         self.board = board
         self.display_mode_on = display_mode_on
+        self.delay = delay
 
         self.players = players
         self.ghosts = ghosts
@@ -137,7 +138,7 @@ class Game:
 
             self.__draw_board()
 
-            pygame.time.delay(500)
+            pygame.time.delay(self.delay)
 
             if not self.players:  # bye
                 print("you lost")
