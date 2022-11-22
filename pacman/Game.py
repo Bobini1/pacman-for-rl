@@ -219,12 +219,12 @@ class Game:
             # eating ghosts
             self.handle_players_eating_ghosts(old_positions, player, players_to_remove, points_to_give)
             # eating players
-            self.handle_players_eating_players(old_positions, player, players_to_remove)
+            self.handle_players_eating_players(old_positions, player, players_to_remove, points_to_give)
 
         for player in players_to_remove:
             self.remove_player(player)
 
-    def handle_players_eating_players(self, old_positions, player, players_to_remove):
+    def handle_players_eating_players(self, old_positions, player, players_to_remove, points_to_give):
         for other_player in self.players:
             if player is not other_player:
                 if self.positions.get(player) == self.positions.get(other_player) or (
@@ -233,6 +233,10 @@ class Game:
                 ):
                     if other_player in self.eatable_timers:
                         players_to_remove.append(other_player)
+                        points_to_give[player] += ENEMY_VALUE
+                    else:
+                        # don't crash into each other. (^^)
+                        players_to_remove.append(player)
 
     def handle_players_eating_ghosts(self, old_positions, player, players_to_remove, points_to_give):
         for ghost in self.ghosts:
