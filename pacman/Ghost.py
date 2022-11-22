@@ -1,7 +1,7 @@
 from .Helpers import can_move_in_direction, find_path, positions_to_direction, direction_to_new_position
 from .Direction import Direction
 from .Position import Position, clamp
-from random import choice
+from random import choice, random
 
 
 def default_strategy_eatable(my_position, my_direction, walls, pacman_positions, board_size, changed):
@@ -45,7 +45,19 @@ def strategy_normal_factory(relative_to_pacman: Position):
                 path = find_path(my_position, closest_pacman, walls_with_previous_position_blocked, board_size)
             if not path:
                 path = find_path(my_position, closest_pacman, walls, board_size)
-            return positions_to_direction(my_position, path[0] if path else my_position)
+            if not path:
+                while not path:
+                    goal = get_any_position(board_size, my_position, walls)
+                    path = find_path(my_position, goal, walls, board_size)
+            return positions_to_direction(my_position, path[0])
+
+    def get_any_position(board_size, my_position, walls):
+        all_positions = set()
+        for x in range(board_size[0]):
+            for y in range(board_size[1]):
+                all_positions.add(Position(x, y))
+        goal = choice(list(all_positions - walls - {my_position}))
+        return goal
 
     return strategy
 

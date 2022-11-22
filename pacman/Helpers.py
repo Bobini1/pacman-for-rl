@@ -4,7 +4,7 @@ from typing import List, Set, Tuple
 
 
 def can_move_in_direction(position: Position, direction: Direction, walls: Set[Position],
-                          board_size: Tuple[int, int]) -> bool:
+                          board_size: Tuple[int, int], phasing=False) -> bool:
     pos = None
     if direction == Direction.UP:
         pos = Position(position.x, position.y - 1)
@@ -15,7 +15,7 @@ def can_move_in_direction(position: Position, direction: Direction, walls: Set[P
     elif direction == Direction.RIGHT:
         pos = Position(position.x + 1, position.y)
 
-    return pos not in walls and pos == clamp(pos, Position(0, 0), Position(board_size[0] - 1, board_size[1] - 1))
+    return ((pos not in walls) or phasing) and pos == clamp(pos, Position(0, 0), Position(board_size[0] - 1, board_size[1] - 1))
 
 
 def direction_to_new_position(position: Position, direction: Direction) -> Position:
@@ -110,6 +110,8 @@ def find_path(start: Position, end: Position, walls: Set[Position], board_size: 
 
     # get the closest position to end that is not a wall
     end = get_closest_position(end, walls, board_size)
+
+    start = clamp(start, Position(0, 0), Position(board_size[0] - 1, board_size[1] - 1))
 
     # add the start position to the queue
     queue.append(start)

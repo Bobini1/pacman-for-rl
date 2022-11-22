@@ -51,9 +51,13 @@ class Game:
         self.starting_positions = {}
         self.directions = {}
         self.eatable_timers = {}
+        self.phasing_timers = {}
         self.walls = set()
         self.points = set()
         self.big_points = set()
+        self.phasing_points = set()
+
+        self.final_scores = {player: 0 for player in self.players}
 
         self.__init_game()
 
@@ -78,6 +82,8 @@ class Game:
                     self.big_points.add(Position(x, y))
                 if obj == 'w':
                     self.walls.add(Position(x, y))
+                if obj == 'z':
+                    self.phasing_points.add(Position(x, y))
 
         self.board_size = (len(self.board[0]), len(self.board))
 
@@ -106,24 +112,38 @@ class Game:
                              pygame.Rect(self.cell_size * position.x, self.cell_size * position.y, self.cell_size,
                                          self.cell_size))
             pygame.draw.rect(self.screen, color, pygame.Rect(position.x * self.cell_size + self.player_size // 2,
-                                                             position.y * self.cell_size + self.player_size // 2, self.player_size, self.player_size))
+                                                             position.y * self.cell_size + self.player_size // 2,
+                                                             self.player_size, self.player_size))
             self.screen.blit(self.player_image,
-                             (position.x * self.cell_size - self.player_size // 2, position.y * self.cell_size - self.player_size // 2))
+                             (position.x * self.cell_size - self.player_size // 2,
+                              position.y * self.cell_size - self.player_size // 2))
 
         for ghost in self.ghosts:
             position = self.positions[ghost]
             self.screen.blit(self.ghost_image_blue if ghost in self.eatable_timers else self.ghost_image,
-                             (position.x * self.cell_size - self.player_size // 2, position.y * self.cell_size - self.player_size // 2))
+                             (position.x * self.cell_size - self.player_size // 2,
+                              position.y * self.cell_size - self.player_size // 2))
 
         color = (255, 255, 255)
 
         for point in self.points:
             pygame.draw.ellipse(self.screen, color,
-                                pygame.Rect(point.x * self.cell_size + (self.cell_size - self.point_size) // 2, point.y * self.cell_size + (self.cell_size - self.point_size) // 2, self.point_size,
+                                pygame.Rect(point.x * self.cell_size + (self.cell_size - self.point_size) // 2,
+                                            point.y * self.cell_size + (self.cell_size - self.point_size) // 2,
+                                            self.point_size,
                                             self.point_size))
         for point in self.big_points:
             pygame.draw.ellipse(self.screen, color,
-                                pygame.Rect(point.x * self.cell_size + (self.cell_size - self.big_point_size) // 2, point.y * self.cell_size + (self.cell_size - self.big_point_size) // 2, self.big_point_size,
+                                pygame.Rect(point.x * self.cell_size + (self.cell_size - self.big_point_size) // 2,
+                                            point.y * self.cell_size + (self.cell_size - self.big_point_size) // 2,
+                                            self.big_point_size,
+                                            self.big_point_size))
+
+        for point in self.phasing_points:
+            pygame.draw.ellipse(self.screen, (255, 0, 255),
+                                pygame.Rect(point.x * self.cell_size + (self.cell_size - self.big_point_size) // 2,
+                                            point.y * self.cell_size + (self.cell_size - self.big_point_size) // 2,
+                                            self.big_point_size,
                                             self.big_point_size))
 
         pygame.display.flip()
@@ -141,13 +161,15 @@ class Game:
 
             if not self.players:  # bye
                 print("you lost")
-                break
+                return self.final_scores
 
             if not self.points and not self.big_points:  # congrats!
                 print('you won')
-                break
+                return self.final_scores
 
             self.update_eatable_timers()
+
+            self.update_phasing_timers()
 
             player_info = self.get_player_info()
 
@@ -172,6 +194,7 @@ class Game:
             for player, points in points_to_give.items():
                 if player in self.players:  # if player is not dead
                     player.give_points(points)
+                    self.final_scores[player] += points
 
     def handle_players_eating_points(self, points_to_give):
         for player in self.players:
@@ -187,6 +210,9 @@ class Game:
                 for ghost in self.ghosts:
                     self.eatable_timers[ghost] = TIMER
                 points_to_give[player] += BIG_POINT_VALUE
+            if self.positions[player] in self.phasing_points:
+                self.phasing_points.remove(self.positions[player])
+                self.phasing_timers[player] = TIMER
 
     def handle_ghosts_eating(self, old_positions):
         for ghost in self.ghosts:
@@ -285,14 +311,25 @@ class Game:
             walls = deepcopy(self.walls)
             board_size = deepcopy(self.board_size)
             game_state = GameState(you, other_players, ghosts, points, big_points, walls, board_size)
+            is_stuck = self.is_stuck(player)
             move = player.make_move(game_state)
             while True:
-                if can_move_in_direction(self.positions[player], move, self.walls, self.board_size):
+                if can_move_in_direction(self.positions[player], move, self.walls, self.board_size,
+                                         phasing=is_stuck or player in self.phasing_timers):
                     moves[player] = move
                     break
                 else:
                     move = player.make_move(game_state, invalid_move=True)
+
         return moves
+
+    def is_stuck(self, player):
+        is_stuck = True
+        for direction in Direction:
+            if can_move_in_direction(self.positions[player], direction, self.walls, self.board_size):
+                is_stuck = False
+                break
+        return is_stuck
 
     def get_ghost_info(self):
         ghost_info = []
@@ -319,7 +356,14 @@ class Game:
             else:
                 is_eatable = False
                 eatable_timer = None
-            player_info[player] = {'position': position, 'is_eatable': is_eatable, 'eatable_timer': eatable_timer}
+            if (player in self.phasing_timers) or self.is_stuck(player):
+                is_phasing = True
+                phasing_timer = self.phasing_timers.get(player, 0)
+            else:
+                is_phasing = False
+                phasing_timer = None
+            player_info[player] = {'position': position, 'is_eatable': is_eatable, 'eatable_timer': eatable_timer,
+                                   'is_phasing': is_phasing, 'phasing_timer': phasing_timer}
         return player_info
 
     def update_eatable_timers(self):
@@ -330,3 +374,12 @@ class Game:
                 timers_to_remove.append(entity)
         for entity in timers_to_remove:
             del self.eatable_timers[entity]
+
+    def update_phasing_timers(self):
+        timers_to_remove = []
+        for entity in self.phasing_timers.keys():
+            self.phasing_timers[entity] -= 1
+            if self.phasing_timers[entity] == 0:
+                timers_to_remove.append(entity)
+        for entity in timers_to_remove:
+            del self.phasing_timers[entity]
