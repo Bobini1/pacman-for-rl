@@ -241,12 +241,15 @@ class Game:
                     and self.positions.get(ghost) == old_positions[player]
             ):
                 if ghost in self.eatable_timers:
-                    self.eatable_timers.pop(ghost)
-                    self.positions[ghost] = self.starting_positions[ghost]
-                    self.directions[ghost] = Direction.RIGHT
-                    points_to_give[player] += ENEMY_VALUE
+                    self.kill_ghost(ghost, player, points_to_give)
                 else:
                     players_to_remove.append(player)
+
+    def kill_ghost(self, ghost, player, points_to_give):
+        self.eatable_timers.pop(ghost)
+        self.positions[ghost] = self.starting_positions[ghost]
+        self.directions[ghost] = Direction.RIGHT
+        points_to_give[player] += ENEMY_VALUE
 
     def update_positions_and_get_old(self, moves):
         old_positions = {}
@@ -315,16 +318,6 @@ class Game:
                 eatable_timer = None
             player_info[player] = {'position': position, 'is_eatable': is_eatable, 'eatable_timer': eatable_timer}
         return player_info
-
-    def update_phasing_timers(self):
-        # phasing
-        timers_to_remove = []
-        for entity in self.phasing_timers.keys():
-            self.phasing_timers[entity] -= 1
-            if self.phasing_timers[entity] == 0:
-                timers_to_remove.append(entity)
-        for entity in timers_to_remove:
-            del self.phasing_timers[entity]
 
     def update_eatable_timers(self):
         timers_to_remove = []
