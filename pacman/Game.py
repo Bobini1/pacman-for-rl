@@ -148,150 +148,189 @@ class Game:
                 print('you won')
                 break
 
-            timers_to_remove = []
+            self.update_eatable_timers()
 
-            for entity in self.eatable_timers.keys():
-                self.eatable_timers[entity] -= 1
-                if self.eatable_timers[entity] == 0:
-                    timers_to_remove.append(entity)
+            player_info = self.get_player_info()
 
-            for entity in timers_to_remove:
-                del self.eatable_timers[entity]
+            ghost_info = self.get_ghost_info()
 
-            player_info = {}
-            for player in self.players:
-                position = self.positions[player]
-                if player in self.eatable_timers:
-                    is_eatable = True
-                    eatable_timer = self.eatable_timers[player]
-                else:
-                    is_eatable = False
-                    eatable_timer = None
-                player_info[player] = {'position': position, 'is_eatable': is_eatable, 'eatable_timer': eatable_timer}
+            moves = self.get_player_moves(ghost_info, player_info)
 
-            ghost_info = []
-            for ghost in self.ghosts:
-                position = self.positions[ghost]
-                direction = self.directions[ghost]
-                if ghost in self.eatable_timers:
-                    is_eatable = True
-                    eatable_timer = self.eatable_timers[ghost]
-                else:
-                    is_eatable = False
-                    eatable_timer = None
-                ghost_info.append({'position': position, 'is_eatable': is_eatable, 'eatable_timer': eatable_timer,
-                                   'direction': direction})
+            self.update_ghost_movement_directions()
 
-            moves = {}
-
-            for player in self.players:
-                other_players = player_info.copy()
-                you = other_players.pop(player)
-                other_players = deepcopy(list(other_players.values()))
-                you = deepcopy(you)
-                ghosts = deepcopy(ghost_info)
-                points = deepcopy(self.points)
-                big_points = deepcopy(self.big_points)
-                walls = deepcopy(self.walls)
-                board_size = deepcopy(self.board_size)
-                game_state = GameState(you, other_players, ghosts, points, big_points, walls, board_size)
-                move = player.make_move(game_state)
-                while True:
-                    if can_move_in_direction(self.positions[player], move, self.walls, self.board_size):
-                        moves[player] = move
-                        break
-                    else:
-                        move = player.make_move(game_state, invalid_move=True)
-
-            for ghost in self.ghosts:
-                itemgetter = my_itemgetter(*self.players)
-                self.directions[ghost] = ghost.make_move(self.positions[ghost], self.directions[ghost], self.walls,
-                                                         itemgetter(self.positions), self.board_size,
-                                                         True if ghost in self.eatable_timers else False)
-
-            players_to_remove = []
-
-            old_positions = {}
-
-            # convert moves to positions
-            for player in self.players:
-                old_positions[player] = self.positions[player]
-                self.positions[player] = direction_to_new_position(self.positions[player], moves[player])
-
-            for ghost in self.ghosts:
-                old_positions[ghost] = self.positions[ghost]
-                self.positions[ghost] = direction_to_new_position(self.positions[ghost], self.directions[ghost])
+            old_positions = self.update_positions_and_get_old(moves)
 
             points_to_give = {player: 0 for player in self.players}
 
-            # handle eating enemies
-            # the time complexity could be improved but I don't care
-            for player in self.players:
-                if player in self.eatable_timers:
-                    continue
-                # eating ghosts
-                for ghost in self.ghosts:
-                    if self.positions[player] == self.positions[ghost] or (
-                            self.positions.get(player) == old_positions[ghost]
-                            and self.positions.get(ghost) == old_positions[player]
-                    ):
-                        if ghost in self.eatable_timers:
-                            self.eatable_timers.pop(ghost)
-                            self.positions[ghost] = self.starting_positions[ghost]
-                            self.directions[ghost] = Direction.RIGHT
-                            points_to_give[player] += ENEMY_VALUE
-                        else:
-                            players_to_remove.append(player)
-                # eating players
-                for other_player in self.players:
-                    if player is not other_player:
-                        if self.positions.get(player) == self.positions.get(other_player) or (
-                                self.positions.get(player) == old_positions[other_player]
-                                and self.positions.get(other_player) == old_positions[player]
-                        ):
-                            if other_player in self.eatable_timers:
-                                players_to_remove.append(other_player)
-
-            for player in players_to_remove:
-                self.eatable_timers.pop(player, None)
-                if player in self.players:
-                    self.players.remove(player)
-                self.positions.pop(player, None)
-                self.directions.pop(player, None)
-                player.on_death()
+            self.handle_players_eating_enemies(old_positions, points_to_give)
 
             # ghosts eating players
-            for ghost in self.ghosts:
-                if ghost in self.eatable_timers:
-                    continue
-                for player in self.players:
-                    if self.positions.get(ghost) == self.positions.get(player) or (
-                            self.positions.get(ghost) == old_positions[
-                        player] and  # for the case where a player and ghost
-                            self.positions.get(player) == old_positions[ghost]  # move over each other in the same tick
-                    ):
-                        self.eatable_timers.pop(player, None)
-                        if player in self.players:
-                            self.players.remove(player)
-                        self.positions.pop(player, None)
-                        self.directions.pop(player, None)
-                        player.on_death()
+            self.handle_ghosts_eating(old_positions)
 
             # eating points
-            for player in self.players:
-                if self.positions[player] in self.points:
-                    self.points.remove(self.positions[player])
-                    points_to_give[player] += POINT_VALUE
-                if self.positions[player] in self.big_points:
-                    self.big_points.remove(self.positions[player])
-                    # set timer on other players and ghosts
-                    for other_player in self.players:
-                        if other_player is not player:
-                            self.eatable_timers[other_player] = TIMER
-                    for ghost in self.ghosts:
-                        self.eatable_timers[ghost] = TIMER
-                    points_to_give[player] += BIG_POINT_VALUE
+            self.handle_players_eating_points(points_to_give)
 
             for player, points in points_to_give.items():
                 if player in self.players:  # if player is not dead
                     player.give_points(points)
+
+    def handle_players_eating_points(self, points_to_give):
+        for player in self.players:
+            if self.positions[player] in self.points:
+                self.points.remove(self.positions[player])
+                points_to_give[player] += POINT_VALUE
+            if self.positions[player] in self.big_points:
+                self.big_points.remove(self.positions[player])
+                # set timer on other players and ghosts
+                for other_player in self.players:
+                    if other_player is not player:
+                        self.eatable_timers[other_player] = TIMER
+                for ghost in self.ghosts:
+                    self.eatable_timers[ghost] = TIMER
+                points_to_give[player] += BIG_POINT_VALUE
+
+    def handle_ghosts_eating(self, old_positions):
+        for ghost in self.ghosts:
+            if ghost in self.eatable_timers:
+                continue
+            for player in self.players:
+                if self.positions.get(ghost) == self.positions.get(player) or (
+                        self.positions.get(ghost) == old_positions[
+                    player] and  # for the case where a player and ghost
+                        self.positions.get(player) == old_positions[ghost]  # move over each other in the same tick
+                ):
+                    self.remove_player(player)
+
+    def remove_player(self, player):
+        self.eatable_timers.pop(player, None)
+        if player in self.players:
+            self.players.remove(player)
+        self.positions.pop(player, None)
+        self.directions.pop(player, None)
+        player.on_death()
+
+    def handle_players_eating_enemies(self, old_positions, points_to_give):
+        players_to_remove = []
+        # handle eating enemies
+        # the time complexity could be improved but I don't care
+        for player in self.players:
+            if player in self.eatable_timers:
+                continue
+            # eating ghosts
+            self.handle_players_eating_ghosts(old_positions, player, players_to_remove, points_to_give)
+            # eating players
+            self.handle_players_eating_players(old_positions, player, players_to_remove)
+
+        for player in players_to_remove:
+            self.remove_player(player)
+
+    def handle_players_eating_players(self, old_positions, player, players_to_remove):
+        for other_player in self.players:
+            if player is not other_player:
+                if self.positions.get(player) == self.positions.get(other_player) or (
+                        self.positions.get(player) == old_positions[other_player]
+                        and self.positions.get(other_player) == old_positions[player]
+                ):
+                    if other_player in self.eatable_timers:
+                        players_to_remove.append(other_player)
+
+    def handle_players_eating_ghosts(self, old_positions, player, players_to_remove, points_to_give):
+        for ghost in self.ghosts:
+            if self.positions[player] == self.positions[ghost] or (
+                    self.positions.get(player) == old_positions[ghost]
+                    and self.positions.get(ghost) == old_positions[player]
+            ):
+                if ghost in self.eatable_timers:
+                    self.eatable_timers.pop(ghost)
+                    self.positions[ghost] = self.starting_positions[ghost]
+                    self.directions[ghost] = Direction.RIGHT
+                    points_to_give[player] += ENEMY_VALUE
+                else:
+                    players_to_remove.append(player)
+
+    def update_positions_and_get_old(self, moves):
+        old_positions = {}
+        # convert moves to positions
+        for player in self.players:
+            old_positions[player] = self.positions[player]
+            self.positions[player] = direction_to_new_position(self.positions[player], moves[player])
+        for ghost in self.ghosts:
+            old_positions[ghost] = self.positions[ghost]
+            self.positions[ghost] = direction_to_new_position(self.positions[ghost], self.directions[ghost])
+        return old_positions
+
+    def update_ghost_movement_directions(self):
+        for ghost in self.ghosts:
+            itemgetter = my_itemgetter(*self.players)
+            self.directions[ghost] = ghost.make_move(self.positions[ghost], self.directions[ghost], self.walls,
+                                                     itemgetter(self.positions), self.board_size,
+                                                     True if ghost in self.eatable_timers else False)
+
+    def get_player_moves(self, ghost_info, player_info):
+        moves = {}
+        for player in self.players:
+            other_players = player_info.copy()
+            you = other_players.pop(player)
+            other_players = deepcopy(list(other_players.values()))
+            you = deepcopy(you)
+            ghosts = deepcopy(ghost_info)
+            points = deepcopy(self.points)
+            big_points = deepcopy(self.big_points)
+            walls = deepcopy(self.walls)
+            board_size = deepcopy(self.board_size)
+            game_state = GameState(you, other_players, ghosts, points, big_points, walls, board_size)
+            move = player.make_move(game_state)
+            while True:
+                if can_move_in_direction(self.positions[player], move, self.walls, self.board_size):
+                    moves[player] = move
+                    break
+                else:
+                    move = player.make_move(game_state, invalid_move=True)
+        return moves
+
+    def get_ghost_info(self):
+        ghost_info = []
+        for ghost in self.ghosts:
+            position = self.positions[ghost]
+            direction = self.directions[ghost]
+            if ghost in self.eatable_timers:
+                is_eatable = True
+                eatable_timer = self.eatable_timers[ghost]
+            else:
+                is_eatable = False
+                eatable_timer = None
+            ghost_info.append({'position': position, 'is_eatable': is_eatable, 'eatable_timer': eatable_timer,
+                               'direction': direction})
+        return ghost_info
+
+    def get_player_info(self):
+        player_info = {}
+        for player in self.players:
+            position = self.positions[player]
+            if player in self.eatable_timers:
+                is_eatable = True
+                eatable_timer = self.eatable_timers[player]
+            else:
+                is_eatable = False
+                eatable_timer = None
+            player_info[player] = {'position': position, 'is_eatable': is_eatable, 'eatable_timer': eatable_timer}
+        return player_info
+
+    def update_phasing_timers(self):
+        # phasing
+        timers_to_remove = []
+        for entity in self.phasing_timers.keys():
+            self.phasing_timers[entity] -= 1
+            if self.phasing_timers[entity] == 0:
+                timers_to_remove.append(entity)
+        for entity in timers_to_remove:
+            del self.phasing_timers[entity]
+
+    def update_eatable_timers(self):
+        timers_to_remove = []
+        for entity in self.eatable_timers.keys():
+            self.eatable_timers[entity] -= 1
+            if self.eatable_timers[entity] == 0:
+                timers_to_remove.append(entity)
+        for entity in timers_to_remove:
+            del self.eatable_timers[entity]
