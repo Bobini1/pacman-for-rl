@@ -80,9 +80,9 @@ def get_closest_position(start: Position, walls: Set[Position], board_size: Tupl
             new_position = direction_to_new_position(current, direction)
 
             # if the new position is not visited
-            if not visited[new_position.x][new_position.y] and new_position == clamp(
-                    new_position, Position(0, 0), Position(board_size[0] - 1, board_size[1] - 1)
-            ):
+            if new_position == clamp(
+                    new_position, Position(0, 0),
+                    Position(board_size[0] - 1, board_size[1] - 1)) and not visited[new_position.x][new_position.y]:
                 # add the new position to the queue
                 queue.append(new_position)
 

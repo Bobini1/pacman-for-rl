@@ -35,7 +35,11 @@ class Game:
         self.players = players
         self.ghosts = ghosts
 
-        self.cell_size = 60
+        self.cell_size = 550 // (len(board[0]))
+
+        self.player_size = self.cell_size // 2
+        self.point_size = self.cell_size // 6
+        self.big_point_size = self.cell_size // 3
 
         self.screen = None
         self.player_image = None
@@ -91,33 +95,36 @@ class Game:
             for x, obj in enumerate(line):
                 if obj == 'w':
                     color = (0, 255, 255)
-                    pygame.draw.rect(self.screen, color, pygame.Rect(60 * x, 60 * y, 60, 60))
+                    pygame.draw.rect(self.screen, color,
+                                     pygame.Rect(self.cell_size * x, self.cell_size * y, self.cell_size,
+                                                 self.cell_size))
 
         for player in self.players:
             color = (0, 0, 255) if player in self.eatable_timers else (255, 255, 0)
             position = self.positions[player]
-            pygame.draw.rect(self.screen, color, pygame.Rect(60 * position.x, 60 * position.y, 60, 60))
-            pygame.draw.rect(self.screen, color, pygame.Rect(position.x * self.cell_size + 15,
-                                                             position.y * self.cell_size + 15, 30, 30))
-            self.screen.blit(self.player_image_blue if player in self.eatable_timers else self.player_image,
-                             (position.x * self.cell_size + 15, position.y * self.cell_size + 15))
+            pygame.draw.rect(self.screen, color,
+                             pygame.Rect(self.cell_size * position.x, self.cell_size * position.y, self.cell_size,
+                                         self.cell_size))
+            pygame.draw.rect(self.screen, color, pygame.Rect(position.x * self.cell_size + self.player_size // 2,
+                                                             position.y * self.cell_size + self.player_size // 2, self.player_size, self.player_size))
+            self.screen.blit(self.player_image,
+                             (position.x * self.cell_size - self.player_size // 2, position.y * self.cell_size - self.player_size // 2))
 
         for ghost in self.ghosts:
             position = self.positions[ghost]
-            # pygame.draw.rect(self.screen, color, pygame.Rect(ghost['x'] * self.cell_size + 15, ghost['y'] * self.cell_size + 15, 30, 30))
             self.screen.blit(self.ghost_image_blue if ghost in self.eatable_timers else self.ghost_image,
-                             (position.x * self.cell_size + 15, position.y * self.cell_size + 15))
+                             (position.x * self.cell_size - self.player_size // 2, position.y * self.cell_size - self.player_size // 2))
 
         color = (255, 255, 255)
 
         for point in self.points:
             pygame.draw.ellipse(self.screen, color,
-                                pygame.Rect(point.x * self.cell_size + 25, point.y * self.cell_size + 25, 10,
-                                            10))
+                                pygame.Rect(point.x * self.cell_size + (self.cell_size - self.point_size) // 2, point.y * self.cell_size + (self.cell_size - self.point_size) // 2, self.point_size,
+                                            self.point_size))
         for point in self.big_points:
             pygame.draw.ellipse(self.screen, color,
-                                pygame.Rect(point.x * self.cell_size + 20, point.y * self.cell_size + 20, 20,
-                                            20))
+                                pygame.Rect(point.x * self.cell_size + (self.cell_size - self.big_point_size) // 2, point.y * self.cell_size + (self.cell_size - self.big_point_size) // 2, self.big_point_size,
+                                            self.big_point_size))
 
         pygame.display.flip()
 
