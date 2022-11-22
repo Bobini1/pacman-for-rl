@@ -36,11 +36,15 @@ class Pacman(ABC):
 I hope yours will be smarter than this one...
 """
 class RandomPacman(Pacman):
+    def __init__(self, print_status=True) -> None:
+        self.print_status = print_status
     def give_points(self, points):
-        print(f"random pacman got {points} points")
+        if self.print_status:
+            print(f"random pacman got {points} points")
 
     def on_death(self):
-        print("random pacman dead")
+        if self.print_status:
+            print("random pacman dead")
 
     def make_move(self, game_state, invalid_move=False) -> Direction:
         return random.choice(list(Direction))  # it will make some valid move at some point
