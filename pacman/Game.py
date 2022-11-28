@@ -52,10 +52,15 @@ class Game:
         self.directions = {}
         self.eatable_timers = {}
         self.phasing_timers = {}
+        self.double_points_timers = {}
+        self.indestructible_timers = {}
         self.walls = set()
         self.points = set()
         self.big_points = set()
         self.phasing_points = set()
+        self.indestructible_points = set()
+        self.double_points = set()
+        self.regenerate_points = set()
 
         self.final_scores = {player: 0 for player in self.players}
 
@@ -84,6 +89,12 @@ class Game:
                     self.walls.add(Position(x, y))
                 if obj == 'z':
                     self.phasing_points.add(Position(x, y))
+                if obj == 'i':
+                    self.indestructible_points.add(Position(x, y))
+                if obj == 'd':
+                    self.double_points.add(Position(x, y))
+                if obj == 'r':
+                    self.
 
         self.board_size = (len(self.board[0]), len(self.board))
 
@@ -146,6 +157,20 @@ class Game:
                                             self.big_point_size,
                                             self.big_point_size))
 
+        for point in self.double_points:
+            pygame.draw.ellipse(self.screen, (255, 255, 0),
+                                pygame.Rect(point.x * self.cell_size + (self.cell_size - self.big_point_size) // 2,
+                                            point.y * self.cell_size + (self.cell_size - self.big_point_size) // 2,
+                                            self.big_point_size,
+                                            self.big_point_size))
+
+        for point in self.indestructible_points:
+            pygame.draw.ellipse(self.screen, (0, 255, 0),
+                                pygame.Rect(point.x * self.cell_size + (self.cell_size - self.big_point_size) // 2,
+                                            point.y * self.cell_size + (self.cell_size - self.big_point_size) // 2,
+                                            self.big_point_size,
+                                            self.big_point_size))
+
         pygame.display.flip()
 
     def run(self):
@@ -170,6 +195,10 @@ class Game:
             self.update_eatable_timers()
 
             self.update_phasing_timers()
+
+            self.update_double_points_timers()
+
+            self.update_indestructible_timers()
 
             player_info = self.get_player_info()
 
@@ -200,7 +229,7 @@ class Game:
         for player in self.players:
             if self.positions[player] in self.points:
                 self.points.remove(self.positions[player])
-                points_to_give[player] += POINT_VALUE
+                points_to_give[player] += POINT_VALUE * 1 if player not in self.double_points_timers else POINT_VALUE * 2
             if self.positions[player] in self.big_points:
                 self.big_points.remove(self.positions[player])
                 # set timer on other players and ghosts
@@ -209,16 +238,24 @@ class Game:
                         self.eatable_timers[other_player] = TIMER
                 for ghost in self.ghosts:
                     self.eatable_timers[ghost] = TIMER
-                points_to_give[player] += BIG_POINT_VALUE
+                points_to_give[player] += BIG_POINT_VALUE * 1 if player not in self.double_points_timers else BIG_POINT_VALUE * 2
             if self.positions[player] in self.phasing_points:
                 self.phasing_points.remove(self.positions[player])
                 self.phasing_timers[player] = TIMER
+            if self.positions[player] in self.double_points:
+                self.double_points.remove(self.positions[player])
+                self.double_points_timers[player] = TIMER
+            if self.positions[player] in self.indestructible_points:
+                self.indestructible_points.remove(self.positions[player])
+                self.indestructible_timers[player] = TIMER
 
     def handle_ghosts_eating(self, old_positions):
         for ghost in self.ghosts:
             if ghost in self.eatable_timers:
                 continue
             for player in self.players:
+                if player in self.indestructible_timers:
+                    continue
                 if self.positions.get(ghost) == self.positions.get(player) or (
                         self.positions.get(ghost) == old_positions[
                     player] and  # for the case where a player and ghost
@@ -256,10 +293,10 @@ class Game:
                         self.positions.get(player) == old_positions[other_player]
                         and self.positions.get(other_player) == old_positions[player]
                 ):
-                    if other_player in self.eatable_timers:
+                    if other_player in self.eatable_timers and other_player not in self.indestructible_timers:
                         players_to_remove.append(other_player)
-                        points_to_give[player] += ENEMY_VALUE
-                    else:
+                        points_to_give[player] += ENEMY_VALUE * 1 if player not in self.double_points_timers else ENEMY_VALUE * 2
+                    elif player not in self.indestructible_timers:
                         # don't crash into each other. (^^)
                         players_to_remove.append(player)
 
@@ -278,7 +315,7 @@ class Game:
         self.eatable_timers.pop(ghost)
         self.positions[ghost] = self.starting_positions[ghost]
         self.directions[ghost] = Direction.RIGHT
-        points_to_give[player] += ENEMY_VALUE
+        points_to_give[player] += ENEMY_VALUE * 1 if player not in self.double_points_timers else ENEMY_VALUE * 2
 
     def update_positions_and_get_old(self, moves):
         old_positions = {}
@@ -356,14 +393,28 @@ class Game:
             else:
                 is_eatable = False
                 eatable_timer = None
-            if (player in self.phasing_timers) or self.is_stuck(player):
+            if player in self.phasing_timers or self.is_stuck(player):
                 is_phasing = True
                 phasing_timer = self.phasing_timers.get(player, 0)
             else:
                 is_phasing = False
                 phasing_timer = None
+            if player in self.double_points_timers:
+                is_double_points = True
+                double_points_timer = self.double_points_timers.get(player, 0)
+            else:
+                is_double_points = False
+                double_points_timer = None
+            if player in self.indestructible_timers:
+                is_indestructible = True
+                indestructible_timer = self.indestructible_timers.get(player, 0)
+            else:
+                is_indestructible = False
+                indestructible_timer = None
             player_info[player] = {'position': position, 'is_eatable': is_eatable, 'eatable_timer': eatable_timer,
-                                   'is_phasing': is_phasing, 'phasing_timer': phasing_timer}
+                                   'is_phasing': is_phasing, 'phasing_timer': phasing_timer,
+                                   'is_double_points': is_double_points, 'double_points_timer': double_points_timer,
+                                   'is_indestructible': is_indestructible, 'indestructible_timer': indestructible_timer}
         return player_info
 
     def update_eatable_timers(self):
@@ -383,3 +434,21 @@ class Game:
                 timers_to_remove.append(entity)
         for entity in timers_to_remove:
             del self.phasing_timers[entity]
+
+    def update_double_points_timers(self):
+        timers_to_remove = []
+        for entity in self.double_points_timers.keys():
+            self.double_points_timers[entity] -= 1
+            if self.double_points_timers[entity] == 0:
+                timers_to_remove.append(entity)
+        for entity in timers_to_remove:
+            del self.double_points_timers[entity]
+
+    def update_indestructible_timers(self):
+        timers_to_remove = []
+        for entity in self.indestructible_timers.keys():
+            self.indestructible_timers[entity] -= 1
+            if self.indestructible_timers[entity] == 0:
+                timers_to_remove.append(entity)
+        for entity in timers_to_remove:
+            del self.indestructible_timers[entity]
