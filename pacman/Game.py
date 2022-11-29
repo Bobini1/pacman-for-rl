@@ -93,8 +93,6 @@ class Game:
                     self.indestructible_points.add(Position(x, y))
                 if obj == 'd':
                     self.double_points.add(Position(x, y))
-                if obj == 'r':
-                    self.
 
         self.board_size = (len(self.board[0]), len(self.board))
 
