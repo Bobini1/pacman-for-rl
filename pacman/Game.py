@@ -12,6 +12,7 @@ from copy import deepcopy
 from .Helpers import can_move_in_direction, direction_to_new_position
 
 BIG_POINT_VALUE = 5
+BIG_BIG_POINT_VALUE = 20
 POINT_VALUE = 1
 ENEMY_VALUE = 20
 TIMER = 15
@@ -44,6 +45,7 @@ class Game:
         self.player_size = self.cell_size // 2
         self.point_size = self.cell_size // 6
         self.big_point_size = self.cell_size // 3
+        self.big_big_point_size = self.cell_size // 2
 
         self.screen = None
         self.player_image = None
@@ -61,6 +63,7 @@ class Game:
         self.walls = set()
         self.points = set()
         self.big_points = set()
+        self.big_big_points = set()
         self.phasing_points = set()
         self.indestructible_points = set()
         self.double_points = set()
@@ -100,6 +103,8 @@ class Game:
                     self.double_points.add(Position(x, y))
                 if obj == 's':
                     self.spawners.add(Position(x, y))
+                if obj == 'b':
+                    self.big_big_points.add(Position(x, y))
 
         for spawner in self.spawners:
             self.spawners_timers[spawner] = TIMER_SPAWNER, False
@@ -178,6 +183,13 @@ class Game:
                                             point.y * self.cell_size + (self.cell_size - self.big_point_size) // 2,
                                             self.big_point_size,
                                             self.big_point_size))
+
+        for point in self.big_big_points:
+            pygame.draw.ellipse(self.screen, (255, 0, 0),
+                                pygame.Rect(point.x * self.cell_size + (self.cell_size - self.big_big_point_size) // 2,
+                                            point.y * self.cell_size + (self.cell_size - self.big_big_point_size) // 2,
+                                            self.big_big_point_size,
+                                            self.big_big_point_size))
 
         pygame.display.flip()
 
@@ -260,6 +272,10 @@ class Game:
             if self.positions[player] in self.indestructible_points:
                 self.indestructible_points.remove(self.positions[player])
                 self.indestructible_timers[player] = TIMER
+            if self.positions[player] in self.big_big_points:
+                self.big_big_points.remove(self.positions[player])
+                points_to_give[
+                    player] += BIG_BIG_POINT_VALUE * 1 if player not in self.double_points_timers else BIG_BIG_POINT_VALUE * 2
 
     def handle_ghosts_eating(self, old_positions):
         for ghost in self.ghosts:
@@ -480,7 +496,7 @@ class Game:
                     self.remove_point(position)
                     self.spawners_timers[position] = TIMER_SPAWNER, False
                 else:
-                    random.choice([self.phasing_points, self.double_points, self.indestructible_points]).add(position)
+                    random.choice([self.phasing_points, self.double_points, self.indestructible_points, self.big_big_points]).add(position)
                     self.spawners_timers[position] = TIMER_SPAWNER, True
 
     def remove_point(self, position):
@@ -491,3 +507,4 @@ class Game:
         self.double_points_timers.pop(position, None)
         self.phasing_points.discard(position)
         self.phasing_timers.pop(position, None)
+        self.big_big_points.discard(position)
