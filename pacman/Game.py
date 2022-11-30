@@ -488,7 +488,7 @@ class Game:
             self.spawners_timers[position] = (timer_value[0] - 1, timer_value[1])
 
             if self.spawners_timers[position][1] and position not in (
-                    self.phasing_points | self.double_points | self.indestructible_points):  # if point was eaten
+                    self.phasing_points | self.double_points | self.indestructible_points | self.big_big_points):  # if point was eaten
                 self.spawners_timers[position] = TIMER_SPAWNER, False
 
             if self.spawners_timers[position][0] == 0:
@@ -496,7 +496,9 @@ class Game:
                     self.remove_point(position)
                     self.spawners_timers[position] = TIMER_SPAWNER, False
                 else:
-                    random.choice([self.phasing_points, self.double_points, self.indestructible_points, self.big_big_points]).add(position)
+                    random.choice(
+                        [self.phasing_points, self.double_points, self.indestructible_points, self.big_big_points]).add(
+                        position)
                     self.spawners_timers[position] = TIMER_SPAWNER, True
 
     def remove_point(self, position):
