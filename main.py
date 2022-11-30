@@ -25,7 +25,7 @@ board_big = ["wwwwwwwwwwwwwwwwwwwwwwwwwwww",
              "   z  *   www  www   *  z   ",
              "wwwwww*ww wwwggwww ww*wwwwww",
              "wwwwww*ww wwwwwwww ww*wwwwww",
-             "wwwwww*ww          ww*wwwwww",
+             "wwwwww*ww s      s ww*wwwwww",
              "wwwwww*ww wwwwwwww ww*wwwwww",
              "wwwwww*ww wwwwwwww ww*wwwwww",
              "w*****i******ww******d*****w",
@@ -42,5 +42,5 @@ board_big = ["wwwwwwwwwwwwwwwwwwwwwwwwwwww",
 
 while True:
     game = Game(board_big, [Ghosts.RED, Ghosts.PINK, Ghosts.BLUE, Ghosts.ORANGE],
-                [RandomPacman(), RandomPacman(), RandomPacman(), RandomPacman()], True, delay=0)
+                [RandomPacman(), RandomPacman(), RandomPacman(), RandomPacman()], True, delay=100)
     print(game.run())

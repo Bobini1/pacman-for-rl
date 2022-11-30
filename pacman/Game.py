@@ -1,3 +1,5 @@
+import random
+
 import pygame
 from typing import List
 
@@ -13,6 +15,7 @@ BIG_POINT_VALUE = 5
 POINT_VALUE = 1
 ENEMY_VALUE = 20
 TIMER = 15
+TIMER_SPAWNER = TIMER * 3
 
 
 def my_itemgetter(*items):
@@ -54,6 +57,7 @@ class Game:
         self.phasing_timers = {}
         self.double_points_timers = {}
         self.indestructible_timers = {}
+        self.spawners_timers = {}
         self.walls = set()
         self.points = set()
         self.big_points = set()
@@ -61,6 +65,7 @@ class Game:
         self.indestructible_points = set()
         self.double_points = set()
         self.regenerate_points = set()
+        self.spawners = set()
 
         self.final_scores = {player: 0 for player in self.players}
 
@@ -93,6 +98,11 @@ class Game:
                     self.indestructible_points.add(Position(x, y))
                 if obj == 'd':
                     self.double_points.add(Position(x, y))
+                if obj == 's':
+                    self.spawners.add(Position(x, y))
+
+        for spawner in self.spawners:
+            self.spawners_timers[spawner] = TIMER_SPAWNER, False
 
         self.board_size = (len(self.board[0]), len(self.board))
 
@@ -198,6 +208,8 @@ class Game:
 
             self.update_indestructible_timers()
 
+            self.update_spawners_timers()
+
             player_info = self.get_player_info()
 
             ghost_info = self.get_ghost_info()
@@ -227,7 +239,8 @@ class Game:
         for player in self.players:
             if self.positions[player] in self.points:
                 self.points.remove(self.positions[player])
-                points_to_give[player] += POINT_VALUE * 1 if player not in self.double_points_timers else POINT_VALUE * 2
+                points_to_give[
+                    player] += POINT_VALUE * 1 if player not in self.double_points_timers else POINT_VALUE * 2
             if self.positions[player] in self.big_points:
                 self.big_points.remove(self.positions[player])
                 # set timer on other players and ghosts
@@ -236,7 +249,8 @@ class Game:
                         self.eatable_timers[other_player] = TIMER
                 for ghost in self.ghosts:
                     self.eatable_timers[ghost] = TIMER
-                points_to_give[player] += BIG_POINT_VALUE * 1 if player not in self.double_points_timers else BIG_POINT_VALUE * 2
+                points_to_give[
+                    player] += BIG_POINT_VALUE * 1 if player not in self.double_points_timers else BIG_POINT_VALUE * 2
             if self.positions[player] in self.phasing_points:
                 self.phasing_points.remove(self.positions[player])
                 self.phasing_timers[player] = TIMER
@@ -293,7 +307,8 @@ class Game:
                 ):
                     if other_player in self.eatable_timers and other_player not in self.indestructible_timers:
                         players_to_remove.append(other_player)
-                        points_to_give[player] += ENEMY_VALUE * 1 if player not in self.double_points_timers else ENEMY_VALUE * 2
+                        points_to_give[
+                            player] += ENEMY_VALUE * 1 if player not in self.double_points_timers else ENEMY_VALUE * 2
                     elif player not in self.indestructible_timers:
                         # don't crash into each other. (^^)
                         players_to_remove.append(player)
@@ -450,3 +465,29 @@ class Game:
                 timers_to_remove.append(entity)
         for entity in timers_to_remove:
             del self.indestructible_timers[entity]
+
+    def update_spawners_timers(self):
+        for position in self.spawners_timers.keys():
+            timer_value = self.spawners_timers[position]
+            self.spawners_timers[position] = (timer_value[0] - 1, timer_value[1])
+
+            if self.spawners_timers[position][1] and position not in (
+                    self.phasing_points | self.double_points | self.indestructible_points):  # if point was eaten
+                self.spawners_timers[position] = TIMER_SPAWNER, False
+
+            if self.spawners_timers[position][0] == 0:
+                if self.spawners_timers[position][1]:
+                    self.remove_point(position)
+                    self.spawners_timers[position] = TIMER_SPAWNER, False
+                else:
+                    random.choice([self.phasing_points, self.double_points, self.indestructible_points]).add(position)
+                    self.spawners_timers[position] = TIMER_SPAWNER, True
+
+    def remove_point(self, position):
+        self.spawners_timers[position] = TIMER_SPAWNER, False
+        self.indestructible_points.discard(position)
+        self.indestructible_timers.pop(position, None)
+        self.double_points.discard(position)
+        self.double_points_timers.pop(position, None)
+        self.phasing_points.discard(position)
+        self.phasing_timers.pop(position, None)
