@@ -31,7 +31,7 @@ def direction_to_new_position(position: Position, direction: Direction) -> Posit
         return position
 
 
-def positions_to_direction(start: Position, end: Position) -> Direction | None:
+def positions_to_direction(start: Position, end: Position) -> Direction:
     if start.x == end.x:
         if start.y > end.y:
             return Direction.UP
