@@ -1,5 +1,7 @@
 import random
 from abc import ABC, abstractmethod
+from typing import Dict
+
 from .Direction import Direction
 
 
@@ -8,6 +10,7 @@ A pacman is that yellow thing with a big mouth that can eat points and ghosts!
 In this game, there can be more than one pacman and they can eat each other too.
 """
 class Pacman(ABC):
+
     """
     Make your choice!
     You can make moves completely randomly if you want, the game won't allow you to make an invalid move.
@@ -22,6 +25,10 @@ class Pacman(ABC):
     """
     @abstractmethod
     def give_points(self, points):
+        pass
+
+    @abstractmethod
+    def on_win(self, result: Dict["Pacman", int]):
         pass
 
     """
@@ -45,6 +52,10 @@ class RandomPacman(Pacman):
     def on_death(self):
         if self.print_status:
             print("random pacman dead")
+
+    def on_win(self, result: Dict["Pacman", int]):
+        if self.print_status:
+            print("random pacman won")
 
     def make_move(self, game_state, invalid_move=False) -> Direction:
         return random.choice(list(Direction))  # it will make some valid move at some point
