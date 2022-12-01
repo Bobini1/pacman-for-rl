@@ -195,12 +195,13 @@ class Game:
 
     def run(self):
         while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    exit()
-
-            self.__draw_board()
+            if self.display_mode_on:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+                if self.display_mode_on:
+                    self.__draw_board()
 
             pygame.time.delay(self.delay)
 
