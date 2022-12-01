@@ -203,7 +203,7 @@ class Game:
                 if self.display_mode_on:
                     self.__draw_board()
 
-            pygame.time.delay(self.delay)
+                pygame.time.delay(self.delay)
 
             if not self.players:  # bye
                 print("you lost")
