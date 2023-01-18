@@ -4,10 +4,18 @@ from .Position import Position, clamp
 from random import choice, random
 
 
+def rotate_left(direction):
+    return {Direction.UP: Direction.LEFT, Direction.LEFT: Direction.DOWN, Direction.DOWN: Direction.RIGHT, Direction.RIGHT: Direction.UP}[direction]
+
+def rotate_right(direction):
+    return {Direction.UP: Direction.RIGHT, Direction.RIGHT: Direction.DOWN, Direction.DOWN: Direction.LEFT, Direction.LEFT: Direction.UP}[direction]
+
 def default_strategy_eatable(my_position, my_direction, walls, pacman_positions, board_size, changed):
     if changed:
         return ~my_direction
-    if can_move_in_direction(my_position, my_direction, walls, board_size):
+    if can_move_in_direction(my_position, my_direction, walls, board_size) \
+            and not (can_move_in_direction(my_position, rotate_left(my_direction), walls, board_size) or
+                     can_move_in_direction(my_position, rotate_right(my_direction), walls, board_size)):
         return my_direction
     else:
         possible_directions = []
@@ -24,7 +32,9 @@ def get_distance(pacman, my_position):
 def strategy_normal_factory(relative_to_pacman: Position):
     # this strategy will look for the closest Pacman and target them
     def strategy(my_position, my_direction, walls, pacman_positions, board_size, changed):
-        if can_move_in_direction(my_position, my_direction, walls, board_size):
+        if can_move_in_direction(my_position, my_direction, walls, board_size) \
+            and not (can_move_in_direction(my_position, rotate_left(my_direction), walls, board_size) or
+                     can_move_in_direction(my_position, rotate_right(my_direction), walls, board_size)):
             return my_direction
         else:
             # find closest pacman
