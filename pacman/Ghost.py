@@ -49,7 +49,7 @@ def strategy_normal_factory(relative_to_pacman: Position):
             if clamped_goal == my_position:
                 clamped_goal = closest_pacman
             walls_with_previous_position_blocked = walls.copy()
-            walls_with_previous_position_blocked.add(direction_to_new_position(my_position, ~my_direction))
+            walls_with_previous_position_blocked.add(direction_to_new_position(my_position, ~my_direction, board_size))
             path = find_path(my_position, clamped_goal, walls_with_previous_position_blocked, board_size)
             if not path:
                 path = find_path(my_position, closest_pacman, walls_with_previous_position_blocked, board_size)
@@ -59,7 +59,7 @@ def strategy_normal_factory(relative_to_pacman: Position):
                 while not path:
                     goal = get_any_position(board_size, my_position, walls)
                     path = find_path(my_position, goal, walls, board_size)
-            return positions_to_direction(my_position, path[0])
+            return positions_to_direction(my_position, path[0], board_size)
 
     def get_any_position(board_size, my_position, walls):
         all_positions = set()

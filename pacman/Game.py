@@ -352,11 +352,11 @@ class Game:
         # convert moves to positions
         for player in self.players:
             old_positions[player] = self.positions[player]
-            self.positions[player] = direction_to_new_position(self.positions[player], moves[player])
+            self.positions[player] = direction_to_new_position(self.positions[player], moves[player], self.board_size)
         for ghost in self.ghosts:
             old_positions[ghost] = self.positions[ghost]
             if self.skip_ghosts:
-                self.positions[ghost] = direction_to_new_position(self.positions[ghost], self.directions[ghost])
+                self.positions[ghost] = direction_to_new_position(self.positions[ghost], self.directions[ghost], self.board_size)
         self.skip_ghosts = not self.skip_ghosts
         return old_positions
 

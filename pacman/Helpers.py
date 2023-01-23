@@ -5,33 +5,39 @@ from typing import List, Set, Tuple
 
 def can_move_in_direction(position: Position, direction: Direction, walls: Set[Position],
                           board_size: Tuple[int, int], phasing=False) -> bool:
-    pos = None
+    return direction_to_new_position(position, direction, board_size) not in walls or phasing
+
+
+def direction_to_new_position(position: Position, direction: Direction, board_size: Tuple[int, int]) -> Position:
     if direction == Direction.UP:
-        pos = Position(position.x, position.y - 1)
-    elif direction == Direction.DOWN:
-        pos = Position(position.x, position.y + 1)
-    elif direction == Direction.LEFT:
-        pos = Position(position.x - 1, position.y)
-    elif direction == Direction.RIGHT:
-        pos = Position(position.x + 1, position.y)
-
-    return ((pos not in walls) or phasing) and pos == clamp(pos, Position(0, 0), Position(board_size[0] - 1, board_size[1] - 1))
-
-
-def direction_to_new_position(position: Position, direction: Direction) -> Position:
-    if direction == Direction.UP:
+        if position.y == board_size[1] - 1:
+            return Position(position.x, 0)
         return Position(position.x, position.y - 1)
     elif direction == Direction.DOWN:
+        if position.y == 0:
+            return Position(position.x, board_size[1] - 1)
         return Position(position.x, position.y + 1)
     elif direction == Direction.LEFT:
+        if position.x == 0:
+            return Position(board_size[0] - 1, position.y)
         return Position(position.x - 1, position.y)
     elif direction == Direction.RIGHT:
+        if position.x == board_size[0] - 1:
+            return Position(0, position.y)
         return Position(position.x + 1, position.y)
     else:
         return position
 
 
-def positions_to_direction(start: Position, end: Position) -> Direction:
+def positions_to_direction(start: Position, end: Position, board_size: Tuple[int, int]) -> Direction:
+    if start.x == 0 and end.x == board_size[0] - 1:
+        return Direction.LEFT
+    elif start.x == board_size[0] - 1 and end.x == 0:
+        return Direction.RIGHT
+    elif start.y == 0 and end.y == board_size[1] - 1:
+        return Direction.UP
+    elif start.y == board_size[1] - 1 and end.y == 0:
+        return Direction.DOWN
     if start.x == end.x:
         if start.y > end.y:
             return Direction.UP
@@ -78,7 +84,7 @@ def get_closest_position(start: Position, walls: Set[Position], board_size: Tupl
         # for each direction
         for direction in Direction:
             # get the new position
-            new_position = direction_to_new_position(current, direction)
+            new_position = direction_to_new_position(current, direction, board_size)
 
             # if the new position is not visited
             if new_position == clamp(
@@ -110,8 +116,6 @@ def find_path(start: Position, end: Position, walls: Set[Position], board_size: 
 
     # get the closest position to end that is not a wall
     end = get_closest_position(end, walls, board_size)
-
-    start = clamp(start, Position(0, 0), Position(board_size[0] - 1, board_size[1] - 1))
 
     # add the start position to the queue
     queue.append(start)
@@ -146,12 +150,10 @@ def find_path(start: Position, end: Position, walls: Set[Position], board_size: 
         # for each direction
         for direction in Direction:
             # get the new position
-            new_position = direction_to_new_position(current, direction)
+            new_position = direction_to_new_position(current, direction, board_size)
 
             # if the new position is not a wall and is not visited
-            if new_position == clamp(
-                    new_position, Position(0, 0),
-                    Position(board_size[0] - 1, board_size[1] - 1)) and new_position not in walls and not \
+            if new_position not in walls and not \
                     visited[new_position.x][new_position.y]:
                 # add the new position to the queue
                 queue.append(new_position)
