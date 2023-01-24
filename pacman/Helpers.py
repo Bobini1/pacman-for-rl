@@ -10,12 +10,12 @@ def can_move_in_direction(position: Position, direction: Direction, walls: Set[P
 
 def direction_to_new_position(position: Position, direction: Direction, board_size: Tuple[int, int]) -> Position:
     if direction == Direction.UP:
-        if position.y == board_size[1] - 1:
-            return Position(position.x, 0)
-        return Position(position.x, position.y - 1)
-    elif direction == Direction.DOWN:
         if position.y == 0:
             return Position(position.x, board_size[1] - 1)
+        return Position(position.x, position.y - 1)
+    elif direction == Direction.DOWN:
+        if position.y == board_size[1] - 1:
+            return Position(position.x, 0)
         return Position(position.x, position.y + 1)
     elif direction == Direction.LEFT:
         if position.x == 0:
