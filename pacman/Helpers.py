@@ -52,9 +52,6 @@ def positions_to_direction(start: Position, end: Position, board_size: Tuple[int
 # get closest position to start that is not a wall
 # get closest position to start that is not a wall
 def get_closest_position(start: Position, walls: Set[Position], board_size: Tuple[int, int]) -> Position:
-    start = clamp(start, Position(0, 0), Position(board_size[0] - 1, board_size[1] - 1))
-
-    # get the board size
     board_width, board_height = board_size
 
     # create a visited array
@@ -102,6 +99,10 @@ def get_closest_position(start: Position, walls: Set[Position], board_size: Tupl
 
 # path finding algorithm between two positions on board
 def find_path(start: Position, end: Position, walls: Set[Position], board_size: Tuple[int, int]) -> List[Position]:
+    start = Position(start.x % board_size[0], start.y % board_size[1])
+
+    end = Position(end.x % board_size[0], end.y % board_size[1])
+
     # get the board size
     board_width, board_height = board_size
 
